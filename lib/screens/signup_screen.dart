@@ -1,7 +1,53 @@
-import 'package:baseapp/screens/email_registration.dart';
-import 'package:baseapp/screens/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'login_screen.dart';
+import 'email_registration.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
+
+
+
+// Future<String?> getToken() async{
+//   final prefs = await SharedPreferences.getInstance();
+//   return prefs.getString('jwt_token');
+// }
+
+
+Future<bool> registerUser(String email, String username, String password) async {
+  final url = Uri.parse('https://studybuddy.ddns.net/api/auth/register'); 
+
+ 
+  try {
+    final response = await http.post(
+      url,
+      body: {
+        'username': username,
+        'email': email,
+        'password': password,
+      },
+    );
+
+    if (response.statusCode == 201) {
+      // Successful registration
+      final responseBody = json.decode(response.body);
+
+      return true;
+      // Navigate to the login page or home page
+    } else if (response.statusCode == 400) {
+      // Invalid entry (e.g., email already registered or missing fields)
+      print(400);
+      return false;
+    } else if (response.statusCode == 500) {
+      print(500);
+      return false;
+    } else {
+      print("something wrong");
+      return false;
+    }
+  } catch (e) {
+    return false;
+  }
+}
 
 
 
@@ -19,7 +65,6 @@ class SignupScreen extends State<SignupScreenState> {
 
   String _name = "";
   String _email = "";
-  String _phoneNumber = "";
   String _password = "";
 
 
@@ -28,7 +73,6 @@ class SignupScreen extends State<SignupScreenState> {
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
   // final _formKey = GlobalKey<FormState>(); // Key to manage form state
@@ -37,16 +81,6 @@ class SignupScreen extends State<SignupScreenState> {
   // final _nameController = TextEditingController();
   // final _phoneController = TextEditingController();
  
- String? validatePhoneNumber(String? value){
-    if(value == null || value.isEmpty){
-      return 'Phone number is required';
-    }
-    else{
-      _phoneNumber = value;
-    }
-  }
-
-
 
 
   String? validateName(String? value){
@@ -77,6 +111,9 @@ class SignupScreen extends State<SignupScreenState> {
     if (value == null || value.isEmpty) {
       return 'Password is required';
     } 
+    else if(value.length < 6){
+      return 'Must be at least 6 characters';
+    }
     _password = value;
     return null;
   }
@@ -105,7 +142,7 @@ Widget build(BuildContext context) {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginState()),
+                      MaterialPageRoute(builder: (context) => Login()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -179,27 +216,7 @@ Widget build(BuildContext context) {
                                 obscureText: false,
                                 decoration: InputDecoration(
                                   prefixIcon: Icon(Icons.person),
-                                  labelText: 'full name',
-                                  filled: true,
-                                  fillColor: Color(0xfff2f3f5),
-                                  border: OutlineInputBorder(),
-                                  errorStyle: TextStyle(
-                                    color: Colors.black
-                                  )
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 15),
-                            Container(
-                              width: 300,
-                              height: 60,
-                              child: TextFormField(
-                                controller: _phoneController,
-                                validator: validatePhoneNumber,
-                                obscureText: true,
-                                decoration: InputDecoration(
-                                  prefixIcon: Icon(Icons.phone),
-                                  labelText: 'phone number',
+                                  labelText: 'username',
                                   filled: true,
                                   fillColor: Color(0xfff2f3f5),
                                   border: OutlineInputBorder(),
@@ -251,12 +268,23 @@ Widget build(BuildContext context) {
                             ),
                             SizedBox(height: 20),
                             ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
                                 if (_formKey.currentState!.validate()) {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => EmailRegistration()),
-                                  );
+                                  // Call your sign-up API function here, assuming it returns a bool
+                                  bool success = await registerUser(_email, _name,_password);  
+
+                                  if (success) {
+                                    // If registration is successful, navigate to EmailRegistration page
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => EmailRegistration()),
+                                    );
+                                  } else {
+                                    // Handle registration failure (Optional)
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Registration failed. Please try again.')),
+                                    );
+                                  }
                                 }
                               },
                               style: ElevatedButton.styleFrom(
@@ -288,7 +316,7 @@ Widget build(BuildContext context) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => LoginState(),
+                          builder: (context) => Login(),
                         ),
                       );
                     },

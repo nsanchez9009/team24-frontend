@@ -1,35 +1,77 @@
-import 'package:baseapp/screens/signup_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'signup_screen.dart';
 import 'home_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
+Future<void> saveToken(String token) async{
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('jwt_token',token);
+}
 
+Future<bool> loginUser(String username, String password) async {
+  final url = Uri.parse('https://studybuddy.ddns.net/api/auth/login'); // Replace with your login endpoint
 
+  try {
+    final response = await http.post(
+      url,
+      body: {
+        'username': username,
+        'password': password,
+      },
+    );
 
-class LoginState extends StatefulWidget{
-  @override
-  Login createState() => Login();
+    if (response.statusCode == 200) {
+      // Successful login
+      final responseBody = json.decode(response.body);
+      final token = responseBody['token'];  // Assuming the response contains the token
+
+      // Store the token securely (e.g., using shared preferences)
+      await saveToken(token);
+
+      return true;
+      // Navigate to the home page or next screen
+    } else if (response.statusCode == 400) {
+      print("No info boo");
+      return false;
+    } else if (response.statusCode == 500) {
+      // Server error
+      return false;
+    } else {
+      return false;
+    }
+  } catch (e) {
+    return false;
+  }
 }
 
 
-class Login extends State<SignupScreenState>  {
-   String _email = "";
-   String _password="";
+Future<String?> getToken() async{
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('jwt_token');
+}
+
+
+
+
+class Login extends StatelessWidget  {
+   
 
    GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-   final _emailController = TextEditingController();
-   final _passwordController = TextEditingController();
+   TextEditingController _nameController = TextEditingController();
+   TextEditingController _passwordController = TextEditingController();
 
-    String? validateEmail(String? value) {
-    const emailPattern = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
-    final regex = RegExp(emailPattern);
+   String _name = "";
+   String _password="";
+
+    String? validateName(String? value) {
 
     if (value == null || value.isEmpty) {
-      return 'Email is required';
-    } else if (!regex.hasMatch(value)) {
-      return 'Enter a valid email';
-    }
-    _email = value;
+      return 'Username is required';
+    } 
+     _name = value;
     return null;
   }
 
@@ -47,7 +89,7 @@ Widget build(BuildContext context) {
     body: Stack(
       children: [
         Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             image: DecorationImage(
               image: AssetImage('assets/images/background.jpg'),
               fit: BoxFit.cover,
@@ -64,17 +106,17 @@ Widget build(BuildContext context) {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginState()),
+                      MaterialPageRoute(builder: (context) => Login()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFB0C4DE), // Light blue color
+                    backgroundColor: const Color(0xFFB0C4DE), // Light blue color
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30), // Rounded corners
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Button padding
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Button padding
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
@@ -89,8 +131,8 @@ Widget build(BuildContext context) {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(height: 100),
-                  Text(
+                  const SizedBox(height: 100),
+                  const Text(
                     'STUDY BUDDY',
                     style: TextStyle(
                       fontFamily: 'Akatab-Bold.ttf',
@@ -98,7 +140,7 @@ Widget build(BuildContext context) {
                       fontSize: 48,
                     ),
                   ),
-                  SizedBox(height: 70),
+                  const SizedBox(height: 70),
                   Center(
                     child: Container(
                       width: 350,
@@ -107,8 +149,8 @@ Widget build(BuildContext context) {
                         borderRadius: BorderRadius.circular(10),
                         color: Colors.white,
                         boxShadow: [
-                          BoxShadow(
-                            color: Color(0xff9abdcd),
+                          const BoxShadow(
+                            color: const Color(0xff9abdcd),
                             spreadRadius: 0.5,
                             offset: Offset(15, 15),
                           ),
@@ -130,11 +172,12 @@ Widget build(BuildContext context) {
                           Container(
                             width: 300,
                             height: 60,
-                            child: const TextField(
+                            child:  TextField(
+                              controller: _nameController,
                               obscureText: true,
                               decoration: InputDecoration(
-                                prefixIcon: Icon(Icons.email),
-                                labelText: 'email',
+                                prefixIcon: Icon(Icons.person),
+                                labelText: 'username',
                                 filled: true,
                                 fillColor: Color(0xfff2f3f5),
                                 border: OutlineInputBorder(),
@@ -145,7 +188,8 @@ Widget build(BuildContext context) {
                           Container(
                             width: 300,
                             height: 60,
-                            child: const TextField(
+                            child: TextField(
+                              controller: _passwordController,
                               obscureText: true,
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.lock),
@@ -158,13 +202,36 @@ Widget build(BuildContext context) {
                           ),
                           SizedBox(height: 20),
                           ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => HomeScreen(),
-                                ),
-                              );
+                            onPressed: () async {
+                              // Validate input (check if username and password are not empty)
+                              if (_name.isEmpty || _password.isEmpty) {
+                                // Show an error message if either field is empty
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Please enter both username and password')),
+                                );
+                                return; // Exit the function if inputs are invalid
+                              }
+                              _name = _nameController.text;
+                              _password = _passwordController.text;
+                              
+
+                              // Call the login function and await the response
+                              bool isLoggedIn = await loginUser(_name, _password);
+
+                              if (isLoggedIn) {
+                                // If login is successful, navigate to the HomeScreen
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => HomeScreen(),
+                                  ),
+                                );
+                              } else {
+                                // Show an error message if login fails
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Invalid username or password')),
+                                );
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 5),
@@ -177,7 +244,7 @@ Widget build(BuildContext context) {
                               elevation: 5,
                             ),
                             child: Text(
-                              'login',
+                              'Login',
                               style: TextStyle(
                                 fontSize: 20,
                                 color: Colors.white,

@@ -13,7 +13,7 @@ class EmailRegistration extends StatelessWidget{
           IconButton(
             icon: const Icon(Icons.home, size:30),
             onPressed: (){
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginState()
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Login()
               ),
               );
             }
