@@ -18,14 +18,15 @@ Future<bool> registerUser(String email, String username, String password) async 
 
  
   try {
-    final response = await http.post(
-      url,
-      body: {
-        'username': username,
-        'email': email,
-        'password': password,
-      },
-    );
+  final response = await http.post(
+    url,
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'username': username,
+      'email': email,
+      'password': password,
+    }),
+  );
 
     if (response.statusCode == 201) {
       // Successful registration

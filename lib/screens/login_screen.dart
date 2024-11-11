@@ -16,10 +16,11 @@ Future<bool> loginUser(String username, String password) async {
   try {
     final response = await http.post(
       url,
-      body: {
+      headers: {'Content-Type': 'application/json'},
+      body:jsonEncode( {
         'username': username,
         'password': password,
-      },
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -33,11 +34,12 @@ Future<bool> loginUser(String username, String password) async {
       return true;
       // Navigate to the home page or next screen
     } else if (response.statusCode == 400) {
-      print("No info boo");
       return false;
     } else if (response.statusCode == 500) {
+      print("yikes");
       // Server error
       return false;
+
     } else {
       return false;
     }
@@ -212,6 +214,7 @@ Widget build(BuildContext context) {
                                 return; // Exit the function if inputs are invalid
                               }
                               _name = _nameController.text;
+                              print(_name);
                               _password = _passwordController.text;
                               
 
