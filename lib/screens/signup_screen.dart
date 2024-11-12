@@ -5,14 +5,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 
-
-
-// Future<String?> getToken() async{
-//   final prefs = await SharedPreferences.getInstance();
-//   return prefs.getString('jwt_token');
-// }
-
-
 Future<bool> registerUser(String email, String username, String password) async {
   final url = Uri.parse('https://studybuddy.ddns.net/api/auth/register'); 
 
@@ -271,7 +263,6 @@ Widget build(BuildContext context) {
                             ElevatedButton(
                               onPressed: () async {
                                 if (_formKey.currentState!.validate()) {
-                                  // Call your sign-up API function here, assuming it returns a bool
                                   bool success = await registerUser(_email, _name,_password);  
 
                                   if (success) {
@@ -281,7 +272,7 @@ Widget build(BuildContext context) {
                                       MaterialPageRoute(builder: (context) => EmailRegistration()),
                                     );
                                   } else {
-                                    // Handle registration failure (Optional)
+                                    // Handle registration failure
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('Registration failed. Please try again.')),
                                     );

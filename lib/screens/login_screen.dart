@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
-
 import 'signup_screen.dart';
 import 'home_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'session_manager.dart';
 
-// Future<void> saveToken(String token) async{
-//   final prefs = await SharedPreferences.getInstance();
-//   await prefs.setString('jwt_token',token);
-// }
 
 Future<bool> loginUser(String username, String password) async {
-  final url = Uri.parse('https://studybuddy.ddns.net/api/auth/login'); // Replace with your login endpoint
+  final url = Uri.parse('https://studybuddy.ddns.net/api/auth/login'); 
 
   try {
     final response = await http.post(
@@ -28,8 +24,7 @@ Future<bool> loginUser(String username, String password) async {
       final responseBody = json.decode(response.body);
       final token = responseBody['token'];  // Assuming the response contains the token
 
-      // Store the token securely (e.g., using shared preferences)
-      // await saveToken(token);
+       await setToken(token);
 
       return true;
       // Navigate to the home page or next screen
@@ -47,12 +42,6 @@ Future<bool> loginUser(String username, String password) async {
     return false;
   }
 }
-
-
-// Future<String?> getToken() async{
-//   final prefs = await SharedPreferences.getInstance();
-//   return prefs.getString('jwt_token');
-// }
 
 
 class LoginState extends StatefulWidget{
@@ -224,6 +213,8 @@ Widget build(BuildContext context) {
 
                                   if (isLoggedIn) {
                                     // If login is successful, navigate to the HomeScreen
+                                    String? test = getToken();
+                                    print(test);
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
