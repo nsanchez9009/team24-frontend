@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'signup_screen.dart';
 import 'home_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-Future<void> saveToken(String token) async{
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString('jwt_token',token);
-}
+// Future<void> saveToken(String token) async{
+//   final prefs = await SharedPreferences.getInstance();
+//   await prefs.setString('jwt_token',token);
+// }
 
 Future<bool> loginUser(String username, String password) async {
   final url = Uri.parse('https://studybuddy.ddns.net/api/auth/login'); // Replace with your login endpoint
@@ -29,7 +29,7 @@ Future<bool> loginUser(String username, String password) async {
       final token = responseBody['token'];  // Assuming the response contains the token
 
       // Store the token securely (e.g., using shared preferences)
-      await saveToken(token);
+      // await saveToken(token);
 
       return true;
       // Navigate to the home page or next screen
@@ -49,21 +49,26 @@ Future<bool> loginUser(String username, String password) async {
 }
 
 
-Future<String?> getToken() async{
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('jwt_token');
+// Future<String?> getToken() async{
+//   final prefs = await SharedPreferences.getInstance();
+//   return prefs.getString('jwt_token');
+// }
+
+
+class LoginState extends StatefulWidget{
+  @override
+  Login createState() => Login();
+
 }
 
 
-
-
-class Login extends StatelessWidget  {
+class Login extends State<LoginState>  {
    
 
    GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-   TextEditingController _nameController = TextEditingController();
-   TextEditingController _passwordController = TextEditingController();
+   final _nameController = TextEditingController();
+   final _passwordController = TextEditingController();
 
    String _name = "";
    String _password="";
@@ -108,7 +113,7 @@ Widget build(BuildContext context) {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => Login()),
+                      MaterialPageRoute(builder: (context) => LoginState()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -129,7 +134,9 @@ Widget build(BuildContext context) {
                   ),
                 ),
               ),
-              Column(
+              Form(
+              key: _formKey,
+              child:Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -174,9 +181,10 @@ Widget build(BuildContext context) {
                           Container(
                             width: 300,
                             height: 60,
-                            child:  TextField(
+                            child:  TextFormField(
                               controller: _nameController,
-                              obscureText: true,
+                              validator: validateName,
+                              obscureText: false,
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.person),
                                 labelText: 'username',
@@ -190,8 +198,9 @@ Widget build(BuildContext context) {
                           Container(
                             width: 300,
                             height: 60,
-                            child: TextField(
+                            child: TextFormField(
                               controller: _passwordController,
+                              validator: validatePassword,
                               obscureText: true,
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.lock),
@@ -205,31 +214,29 @@ Widget build(BuildContext context) {
                           SizedBox(height: 20),
                           ElevatedButton(
                             onPressed: () async {
-                              // Validate input (check if username and password are not empty)
-                              if (_name.isEmpty || _password.isEmpty) {
-                                // Show an error message if either field is empty
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Please enter both username and password')),
-                                );
-                                return; // Exit the function if inputs are invalid
-                              }
-                              _name = _nameController.text;
-                              print(_name);
-                              _password = _passwordController.text;
-                              
+                                if (_formKey.currentState?.validate() ?? false) {
+                                  // Retrieve values from the text controllers
+                                  _name = _nameController.text;
+                                  _password = _passwordController.text;
 
-                              // Call the login function and await the response
-                              bool isLoggedIn = await loginUser(_name, _password);
+                                  // Call the login function with the retrieved values
+                                  bool isLoggedIn = await loginUser(_name, _password);
 
-                              if (isLoggedIn) {
-                                // If login is successful, navigate to the HomeScreen
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => HomeScreen(),
-                                  ),
-                                );
-                              } else {
+                                  if (isLoggedIn) {
+                                    // If login is successful, navigate to the HomeScreen
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => HomeScreen(),
+                                      ),
+                                    );
+                                  } else {
+                                    // Show an error message if login fails
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Invalid username or password')),
+                                    );
+                                  }
+                                } else {
                                 // Show an error message if login fails
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Invalid username or password')),
@@ -285,6 +292,7 @@ Widget build(BuildContext context) {
                     ),
                   ),
                 ],
+              ),
               ),
             ],
           ),

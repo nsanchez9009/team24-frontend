@@ -143,7 +143,7 @@ Widget build(BuildContext context) {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => Login()),
+                      MaterialPageRoute(builder: (context) => LoginState()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -289,7 +289,7 @@ Widget build(BuildContext context) {
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 5),
+                                padding:  EdgeInsets.symmetric(horizontal: 50, vertical: 5),
                                 backgroundColor: Color(0xff6193a8),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
@@ -317,7 +317,7 @@ Widget build(BuildContext context) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Login(),
+                          builder: (context) => LoginState(),
                         ),
                       );
                     },
