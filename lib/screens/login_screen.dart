@@ -1,3 +1,4 @@
+import 'package:baseapp/screens/land_page.dart';
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'home_screen.dart';
@@ -102,7 +103,7 @@ Widget build(BuildContext context) {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginState()),
+                      MaterialPageRoute(builder: (context) => LandPage()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
