@@ -213,8 +213,6 @@ Widget build(BuildContext context) {
 
                                   if (isLoggedIn) {
                                     // If login is successful, navigate to the HomeScreen
-                                    String? test = getToken();
-                                    print(test);
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(

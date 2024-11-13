@@ -1,29 +1,52 @@
-
 import 'package:baseapp/screens/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'session_manager.dart';
 
 class HomeScreen extends StatelessWidget {
-  //const HomeScreen({Key?key}) : super(key:key)
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Home"),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.home, size:30),
-            onPressed: (){
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginState()
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/background.jpg'),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 40, right: 16),
+            child: Align(
+              alignment: Alignment.topRight,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginState()),
+                    
+                  );
+                  clearToken();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFB0C4DE), // Light blue color
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30), // Rounded corners
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Button padding
+                ),
+                child: const Text(
+                  'Logout',
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
               ),
-              );
-            }
-          )
-        ],
-      ),
-      body: const Center(
-        child: Text("Welcome to the Home Screen!"),
-      ),
+            ),
+          ),
+        ),
+      ],//Stack children
     );
   }
 }

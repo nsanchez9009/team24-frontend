@@ -7,8 +7,9 @@ bool setToken(String token){
 
 }
 
-void clearToken(){
+bool clearToken(){
   sessionToken = null;
+  return true;
    
 }
 
