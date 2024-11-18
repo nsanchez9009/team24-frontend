@@ -224,11 +224,15 @@ class SocketService {
 class LobbyPage extends StatefulWidget {
   final String className;
   final String school;
+  final String username;
+  final String token;
 
   const LobbyPage({
     Key? key,
     required this.className,
     required this.school,
+    required this.username,
+    required this.token,
   }) : super(key: key);
 
   @override
@@ -244,9 +248,16 @@ class _LobbyPageState extends State<LobbyPage> {
   @override
   void initState() {
     super.initState();
+    // Set the authentication info
+
+    debugPrint('Current token: ${AuthService.getToken()}');
+    debugPrint('Current username: ${AuthService.getUsername()}');
+
+    AuthService.setToken(widget.token);
+    AuthService.setUsername(widget.username);
+    
     _initializeSocketService();
     _fetchInitialLobbies();
-    _initializeUserData();
   }
 
   void _initializeSocketService() {
@@ -313,42 +324,6 @@ class _LobbyPageState extends State<LobbyPage> {
     } catch (e) {
       setState(() {
         error = 'Error loading lobbies';
-        isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _initializeUserData() async {
-    try {
-      final token = AuthService.getToken();
-      if (token == null) {
-        setState(() {
-          error = 'Not authenticated';
-          isLoading = false;
-        });
-        return;
-      }
-
-      final response = await http.get(
-        Uri.parse('https://studybuddy.ddns.net/api/user/getuser'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final userData = jsonDecode(response.body);
-        AuthService.setUsername(userData['username']);
-      } else {
-        setState(() {
-          error = 'Failed to get user data';
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        error = 'Error fetching user data';
         isLoading = false;
       });
     }

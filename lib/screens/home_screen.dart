@@ -435,17 +435,36 @@ const SizedBox(height: 10),
               child: ListTile(
                 tileColor: Colors.grey.shade200.withOpacity(0.8),
                 title: Text(courses[index]),
-                onTap: (){
-                  //here add logic in order to get to chat messaging
-                  //insead of a select button I mimplemented a on click.
-
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LobbyPage(className: courses[index], school: trimSchoolName(_selectedSchool))),
+                onTap: () async {
+                  final token = getToken(); // Get the token
+                  final response = await http.get(
+                    Uri.parse('https://studybuddy.ddns.net/api/user/getuser'),
+                    headers: {
+                      'Authorization': 'Bearer $token',
+                    },
                   );
-
-
-                }, 
+                  
+                  if (response.statusCode == 200) {
+                    final userData = jsonDecode(response.body);
+                    final username = userData['username'];
+                    
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LobbyPage(
+                          className: courses[index],
+                          school: trimSchoolName(_selectedSchool),
+                          username: username,
+                          token: token ?? '',
+                        ),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to get user data')),
+                    );
+                  }
+                },
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: () {
