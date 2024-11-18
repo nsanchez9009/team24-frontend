@@ -1,12 +1,10 @@
-// Part 1: Socket Service
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'home_screen.dart';
-import 'session_manager.dart';
 
-// Simple auth service to replace SharedPreferences
+// Auth Service
 class AuthService {
   static String? _token;
   static String? _username;
@@ -31,119 +29,13 @@ class AuthService {
     _token = null;
     _username = null;
   }
-}
 
-//api calls
-
-  
-
-
-class SocketService {
-  late IO.Socket socket;
-  final String serverUrl;
-  final Function(List<Lobby>) onLobbiesUpdate;
-  final Function(String message)? onError;
-  final Function(Lobby)? onJoinSuccess;
-  final Function()? onDisconnect;
-
-  SocketService({
-    required this.serverUrl,
-    required this.onLobbiesUpdate,
-    this.onError,
-    this.onJoinSuccess,
-    this.onDisconnect,
-  }) {
-    initSocket();
-  }
-
-  void initSocket() {
-    debugPrint('📡 Connecting to: $serverUrl');
-    
-    socket = IO.io(serverUrl, {
-      'transports': ['websocket'],
-      'autoConnect': true,
-      'forceNew': true,
-    });
-
-    socket.onConnect((_) {
-      debugPrint('✅ Socket connected | ID: ${socket.id}');
-    });
-
-    socket.onConnectError((error) {
-      debugPrint('❌ Connection Error: $error');
-      onError?.call('Connection error: Please check your internet connection');
-    });
-
-    socket.onDisconnect((_) {
-      debugPrint('❌ Socket disconnected');
-      onDisconnect?.call();
-    });
-
-    socket.on('lobbies_update', (data) {
-      debugPrint('📥 Received lobbies update: $data');
-      try {
-        final lobbies = (data as List)
-            .map((lobbyJson) => Lobby.fromJson(lobbyJson))
-            .toList();
-        onLobbiesUpdate(lobbies);
-      } catch (e) {
-        debugPrint('❌ Error parsing lobbies: $e');
-        onError?.call('Error updating lobbies');
-      }
-    });
-
-    socket.on('join_success', (data) {
-      debugPrint('✅ Successfully joined lobby: $data');
-      try {
-        final lobby = Lobby.fromJson(data);
-        onJoinSuccess?.call(lobby);
-      } catch (e) {
-        debugPrint('❌ Error parsing join response: $e');
-      }
-    });
-
-    socket.on('join_error', (message) {
-      debugPrint('❌ Join error: $message');
-      onError?.call(message.toString());
-    });
-
-    socket.on('lobby_created', (data) {
-      debugPrint('✅ Lobby created: $data');
-    });
-
-    socket.on('lobby_error', (message) {
-      debugPrint('❌ Lobby error: $message');
-      onError?.call(message.toString());
-    });
-  }
-
-  void getLobbyList(String className, String school) {
-    debugPrint('📤 Requesting lobbies for $className at $school');
-    socket.emit('get_lobbies', {
-      'className': className,
-      'school': school,
-    });
-  }
-
-  void createLobby(Map<String, dynamic> lobbyData) {
-    debugPrint('📤 Creating lobby: $lobbyData');
-    socket.emit('create_lobby', lobbyData);
-  }
-
-  void joinLobby(String lobbyId, String username) {
-    debugPrint('📤 Joining lobby $lobbyId as $username');
-    socket.emit('join_lobby', {
-      'lobbyId': lobbyId,
-      'username': username,
-    });
-  }
-
-  void dispose() {
-    socket.dispose();
+  static bool isAuthenticated() {
+    return _token != null && _username != null;
   }
 }
 
-// Part 2: Lobby Model
+// Lobby Model
 class Lobby {
   final String id;
   final String lobbyId;
@@ -179,7 +71,163 @@ class Lobby {
   }
 }
 
-// Part 3: Lobby Page
+// Socket Service
+class SocketService {
+  late IO.Socket socket;
+  final String serverUrl;
+  List<Lobby> _lobbies = [];
+  
+  final Function(List<Lobby>) onLobbiesUpdate;
+  final Function(String)? onError;
+  final Function(Lobby)? onJoinSuccess;
+  final Function()? onDisconnect;
+
+  SocketService({
+    required this.serverUrl,
+    required this.onLobbiesUpdate,
+    this.onError,
+    this.onJoinSuccess,
+    this.onDisconnect,
+  }) {
+    initSocket();
+  }
+
+  void initSocket() {
+    debugPrint('📡 Connecting to: $serverUrl');
+    
+    socket = IO.io(serverUrl, {
+      'transports': ['websocket'],
+      'autoConnect': true,
+      'forceNew': true,
+      'auth': {
+        'token': AuthService.getToken(),
+      },
+    });
+
+    socket.onConnect((_) {
+      debugPrint('✅ Socket connected | ID: ${socket.id}');
+    });
+
+    socket.onConnectError((error) {
+      debugPrint('❌ Connection Error: $error');
+      onError?.call('Connection error: Please check your internet connection');
+    });
+
+    socket.onDisconnect((_) {
+      debugPrint('❌ Socket disconnected');
+      onDisconnect?.call();
+    });
+
+    socket.on('updateLobbyList', (_) {
+      _fetchLobbies();
+    });
+
+    socket.on('lobbyCreated', (data) {
+      debugPrint('✅ Lobby created: $data');
+      _fetchLobbies();
+    });
+
+    socket.on('lobbyJoined', (data) {
+      debugPrint('✅ Joined lobby: $data');
+      try {
+        final lobby = Lobby.fromJson(data);
+        onJoinSuccess?.call(lobby);
+      } catch (e) {
+        debugPrint('❌ Error parsing join response: $e');
+      }
+    });
+
+    socket.on('lobbyError', (message) {
+      debugPrint('❌ Lobby error: $message');
+      onError?.call(message.toString());
+    });
+  }
+
+  Future<void> _fetchLobbies() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$serverUrl/api/lobbies/list'),
+        headers: {
+          'Authorization': 'Bearer ${AuthService.getToken()}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        _lobbies = data.map((json) => Lobby.fromJson(json)).toList();
+        onLobbiesUpdate(_lobbies);
+      } else {
+        onError?.call('Failed to fetch lobbies');
+      }
+    } catch (e) {
+      onError?.call('Error fetching lobbies: $e');
+    }
+  }
+
+  Future<void> createLobby(Map<String, dynamic> lobbyData) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$serverUrl/api/lobbies/create'),
+        headers: {
+          'Authorization': 'Bearer ${AuthService.getToken()}',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(lobbyData),
+      );
+
+      if (response.statusCode == 200) {
+        final newLobby = Lobby.fromJson(json.decode(response.body));
+        socket.emit('lobbyCreated', newLobby.lobbyId);
+        _fetchLobbies();
+      } else {
+        onError?.call('Failed to create lobby');
+      }
+    } catch (e) {
+      onError?.call('Error creating lobby: $e');
+    }
+  }
+
+  Future<void> joinLobby(String lobbyId, String username) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$serverUrl/api/lobbies/join'),
+        headers: {
+          'Authorization': 'Bearer ${AuthService.getToken()}',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'lobbyId': lobbyId,
+          'username': username,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        socket.emit('joinLobby', {
+          'lobbyId': lobbyId,
+          'username': username,
+        });
+      } else {
+        onError?.call('Failed to join lobby');
+      }
+    } catch (e) {
+      onError?.call('Error joining lobby: $e');
+    }
+  }
+
+  void getLobbyList(String className, String school) {
+    socket.emit('get_lobbies', {
+      'className': className,
+      'school': school,
+    });
+  }
+
+  void dispose() {
+    socket.disconnect();
+    socket.dispose();
+  }
+}
+
+// Lobby Page
 class LobbyPage extends StatefulWidget {
   final String className;
   final String school;
@@ -199,12 +247,16 @@ class _LobbyPageState extends State<LobbyPage> {
   String? error;
   bool isLoading = true;
   late SocketService socketService;
-  
+
   @override
   void initState() {
     super.initState();
-    _initializeData();
-    
+    _initializeSocketService();
+    _fetchInitialLobbies();
+    _initializeUserData();
+  }
+
+  void _initializeSocketService() {
     socketService = SocketService(
       serverUrl: 'https://studybuddy.ddns.net',
       onLobbiesUpdate: (updatedLobbies) {
@@ -220,18 +272,58 @@ class _LobbyPageState extends State<LobbyPage> {
         });
       },
       onJoinSuccess: (lobby) {
-        // Navigate to lobby room
-        // Implement your navigation logic here
+        Navigator.pushNamed(
+          context,
+          '/lobby/${lobby.lobbyId}',
+          arguments: {
+            'lobbyId': lobby.lobbyId,
+            'lobbyName': lobby.name,
+            'className': widget.className,
+            'school': widget.school,
+            'username': AuthService.getUsername(),
+          },
+        );
+      },
+      onDisconnect: () {
+        setState(() {
+          error = 'Disconnected from server';
+        });
       },
     );
-
-    socketService.getLobbyList(widget.className, widget.school);
   }
 
-  Future<void> _initializeData() async {
+  Future<void> _fetchInitialLobbies() async {
     try {
-      final token = getToken();
-      
+      final response = await http.get(
+        Uri.parse('https://studybuddy.ddns.net/api/lobbies/list?className=${widget.className}&school=${widget.school}'),
+        headers: {
+          'Authorization': 'Bearer ${AuthService.getToken()}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          lobbies = data.map((json) => Lobby.fromJson(json)).toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          error = 'Failed to load lobbies';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        error = 'Error loading lobbies';
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _initializeUserData() async {
+    try {
+      final token = AuthService.getToken();
       if (token == null) {
         setState(() {
           error = 'Not authenticated';
@@ -251,9 +343,6 @@ class _LobbyPageState extends State<LobbyPage> {
       if (response.statusCode == 200) {
         final userData = jsonDecode(response.body);
         AuthService.setUsername(userData['username']);
-        setState(() {
-          isLoading = false;
-        });
       } else {
         setState(() {
           error = 'Failed to get user data';
@@ -439,31 +528,54 @@ class _LobbyPageState extends State<LobbyPage> {
                                 child: ListTile(
                                   title: Text(lobby.name),
                                   subtitle: Text('Host: ${lobby.host}'),
-                                  trailing: Text(
-                                      '${lobby.currentUsers}/${lobby.maxUsers}'),
-                                  onTap: () {
-                                    final username = AuthService.getUsername();
-                                    if (username == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Please log in first'),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '${lobby.currentUsers}/${lobby.maxUsers}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey,
                                         ),
-                                      );
-                                      return;
-                                    }
-                                    if (lobby.currentUsers < lobby.maxUsers) {
-                                      socketService.joinLobby(
-                                        lobby.lobbyId,
-                                        username,
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Lobby is full'),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      if (lobby.currentUsers < lobby.maxUsers)
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            final username = AuthService.getUsername();
+                                            if (username == null) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text('Please log in first'),
+                                                ),
+                                              );
+                                              return;
+                                            }
+                                            socketService.joinLobby(
+                                              lobby.lobbyId,
+                                              username,
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF6193A9),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
+                                          ),
+                                          child: const Text('Join'),
+                                        )
+                                      else
+                                        TextButton(
+                                          onPressed: null,
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Colors.grey,
+                                          ),
+                                          child: const Text('Full'),
                                         ),
-                                      );
-                                    }
-                                  },
+                                    ],
+                                  ),
                                 ),
                               );
                             },
@@ -483,3 +595,4 @@ class _LobbyPageState extends State<LobbyPage> {
     super.dispose();
   }
 }
+                                
