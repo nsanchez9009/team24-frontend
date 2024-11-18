@@ -128,29 +128,6 @@ class LandPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '• ',
-                          style: TextStyle(
-                            fontSize: 25,
-                            fontFamily: 'Karla',
-                            color: Colors.black,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Select Time Availability',
-                            style: TextStyle(
-                              fontSize: 25,
-                              fontFamily: 'Karla',
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -172,12 +149,21 @@ class LandPage extends StatelessWidget {
                               ),
                               children: [
                                 TextSpan(
-                                  text: 'Connect with other ',
+                                  text: 'Connect and ',
+                                ),
+                                TextSpan(
+                                  text: 'live chat ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(
+                                  text: 'with other ',
+      
                                 ),
                                 TextSpan(
                                   text: 'highly-rated scholars',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
+
                               ],
                             ),
                           ),
