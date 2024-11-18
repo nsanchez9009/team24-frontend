@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'home_screen.dart';
+import 'lobby_chat.dart';
 
 // Auth Service
 class AuthService {
@@ -543,60 +544,103 @@ class _LobbyPageState extends State<LobbyPage> {
                               final lobby = lobbies[index];
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 8),
-                                child: ListTile(
-                                  title: Text(lobby.name),
-                                  subtitle: Text('Host: ${lobby.host}'),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        '${lobby.currentUsers}/${lobby.maxUsers}',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey,
+                                child: InkWell(
+                                  onTap: () {
+                                    final username = AuthService.getUsername();
+                                    if (username == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Please log in first'),
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      if (lobby.currentUsers < lobby.maxUsers)
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            final username =
-                                                AuthService.getUsername();
-                                            if (username == null) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                      'Please log in first'),
+                                      );
+                                      return;
+                                    }
+                                    
+                                    if (lobby.currentUsers < lobby.maxUsers) {
+                                      socketService.joinLobby(
+                                        lobby.lobbyId,
+                                        username,
+                                      );
+                                      
+                                      // Navigate to LobbyChat
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => LobbyChat(
+                                            lobbyId: lobby.lobbyId,
+                                            lobbyName: lobby.name,
+                                            className: widget.className,
+                                            school: widget.school,
+                                            username: username,
+                                            isHost: lobby.host == username,
+                                            maxUsers: lobby.maxUsers,
+                                            currentUsers: lobby.currentUsers,
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('This lobby is full'),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                lobby.name,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
-                                              );
-                                              return;
-                                            }
-                                            socketService.joinLobby(
-                                              lobby.lobbyId,
-                                              username,
-                                            );
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                const Color(0xFF6193A9),
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 8,
-                                            ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Host: ${lobby.host}',
+                                                style: const TextStyle(
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          child: const Text('Join'),
-                                        )
-                                      else
-                                        TextButton(
-                                          onPressed: null,
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: Colors.grey,
-                                          ),
-                                          child: const Text('Full'),
                                         ),
-                                    ],
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey[200],
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                '${lobby.currentUsers}/${lobby.maxUsers}',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Icon(
+                                              Icons.arrow_forward_ios,
+                                              size: 16,
+                                              color: Colors.grey[400],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );
