@@ -97,11 +97,6 @@ class EmailVerification extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 30),
-                Image.network(
-                  'https://example.com/your-cat-image-url.png', // Replace with actual image URL
-                  width: 100,
-                  height: 100,
-                ),
               ],
             ),
           ),

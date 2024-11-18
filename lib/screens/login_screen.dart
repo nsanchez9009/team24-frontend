@@ -219,7 +219,7 @@ Widget build(BuildContext context) {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => HomeScreen(),
+                                        builder: (context) => HomeScreenState(),
                                       ),
                                     );
                                   } else {
