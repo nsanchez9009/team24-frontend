@@ -1,3 +1,4 @@
+import 'package:baseapp/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'land_page.dart';
 
@@ -44,19 +45,14 @@ class EmailVerification extends StatelessWidget {
                   width: 225, // Set a fixed width for the buttons
                   child: ElevatedButton(
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text(
-                                'LOGIN NAV BUTTON PRESSED') //just for debuging
-                            ),
-                      );
+                      
                       // code that goes to login page, delete above scaffold messenger
-                      /*
+                      
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => NAMEOFLOGINPAGE()), waiting on name of the class
-                      ); */
+                            builder: (context) => LoginState()),
+                      ); 
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF6193A9),
