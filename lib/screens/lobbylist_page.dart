@@ -80,13 +80,17 @@ class SocketService {
   final Function(List<Lobby>) onLobbiesUpdate;
   final Function(String)? onError;
   final Function(Lobby)? onJoinSuccess;
+  final Function(Lobby)? onCreateSuccess;
   final Function()? onDisconnect;
+  final Future<void> Function() onRefresh;
 
   SocketService({
     required this.serverUrl,
     required this.onLobbiesUpdate,
+    required this.onRefresh,
     this.onError,
     this.onJoinSuccess,
+    this.onCreateSuccess,
     this.onDisconnect,
   }) {
     initSocket();
@@ -124,7 +128,14 @@ class SocketService {
 
     socket.on('lobbyCreated', (data) {
       debugPrint('✅ Lobby created: $data');
-      _fetchLobbies();
+      try {
+        final lobby = Lobby.fromJson(data);
+        onCreateSuccess?.call(lobby);
+        _fetchLobbies();
+      } catch (e) {
+        debugPrint('❌ Error parsing create response: $e');
+        onError?.call('Error creating lobby');
+      }
     });
 
     socket.on('lobbyJoined', (data) {
@@ -166,6 +177,8 @@ class SocketService {
 
   Future<void> createLobby(Map<String, dynamic> lobbyData) async {
     try {
+      debugPrint('📤 Creating lobby with data: $lobbyData');
+
       final response = await http.post(
         Uri.parse('$serverUrl/api/lobbies/create'),
         headers: {
@@ -175,15 +188,46 @@ class SocketService {
         body: json.encode(lobbyData),
       );
 
-      if (response.statusCode == 200) {
-        final newLobby = Lobby.fromJson(json.decode(response.body));
-        socket.emit('lobbyCreated', newLobby.lobbyId);
-        _fetchLobbies();
+      debugPrint('📥 Create lobby response status: ${response.statusCode}');
+      debugPrint('📥 Create lobby response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final responseData = json.decode(response.body);
+          final newLobby = Lobby.fromJson(responseData);
+
+          // Emit the socket event with the lobby ID
+          socket.emit('lobbyCreated', newLobby.lobbyId);
+
+          // Call the success callback
+          onCreateSuccess?.call(newLobby);
+
+          // Refresh the lobby list
+          await onRefresh();
+
+          debugPrint('✅ Lobby created successfully: ${newLobby.lobbyId}');
+        } catch (parseError) {
+          debugPrint('❌ Error parsing lobby response: $parseError');
+          onError?.call('Error processing server response');
+          return;
+        }
       } else {
-        onError?.call('Failed to create lobby');
+        String errorMessage;
+        try {
+          final errorData = json.decode(response.body) as Map<String, dynamic>;
+          errorMessage =
+              errorData['message'] as String? ?? 'Failed to create lobby';
+        } catch (_) {
+          errorMessage =
+              'Failed to create lobby (Status: ${response.statusCode})';
+        }
+
+        debugPrint('❌ Create lobby failed: $errorMessage');
+        onError?.call(errorMessage);
       }
     } catch (e) {
-      onError?.call('Error creating lobby: $e');
+      debugPrint('❌ Create lobby exception: $e');
+      onError?.call('Network error while creating lobby: $e');
     }
   }
 
@@ -255,7 +299,7 @@ class _LobbyPageState extends State<LobbyPage> {
 
     AuthService.setToken(widget.token);
     AuthService.setUsername(widget.username);
-    
+
     _initializeSocketService();
     _fetchInitialLobbies();
   }
@@ -263,6 +307,7 @@ class _LobbyPageState extends State<LobbyPage> {
   void _initializeSocketService() {
     socketService = SocketService(
       serverUrl: 'https://studybuddy.ddns.net',
+      onRefresh: _fetchInitialLobbies,
       onLobbiesUpdate: (updatedLobbies) {
         setState(() {
           lobbies = updatedLobbies;
