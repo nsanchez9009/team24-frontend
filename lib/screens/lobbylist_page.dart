@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'home_screen.dart';
+import 'session_manager.dart';
 
 // Simple auth service to replace SharedPreferences
 class AuthService {
@@ -31,6 +32,11 @@ class AuthService {
     _username = null;
   }
 }
+
+//api calls
+
+  
+
 
 class SocketService {
   late IO.Socket socket;
@@ -224,7 +230,7 @@ class _LobbyPageState extends State<LobbyPage> {
 
   Future<void> _initializeData() async {
     try {
-      final token = AuthService.getToken();
+      final token = getToken();
       
       if (token == null) {
         setState(() {
