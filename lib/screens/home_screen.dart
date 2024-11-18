@@ -11,6 +11,13 @@ import 'dart:async';
 
 List<dynamic> _schools = []; // update list to display
 
+
+String trimSchoolName(String fullSchoolName) {
+  // Split by dash and trim whitespace
+  final parts = fullSchoolName.split('-');
+  return parts[0].trim();
+}
+
 class HomeScreenState extends StatefulWidget {
   @override
   HomeScreen createState() => HomeScreen();
@@ -412,7 +419,7 @@ const SizedBox(height: 10),
 
                 Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => LobbyPage(className: courses[index], school: _selectedSchool)),
+                    MaterialPageRoute(builder: (context) => LobbyPage(className: courses[index], school: trimSchoolName(_selectedSchool))),
                   );
 
 
