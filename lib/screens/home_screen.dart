@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'session_manager.dart';
 import 'package:baseapp/screens/login_screen.dart';
-import 'lobby_page.dart';
+import 'lobbylist_page.dart';
 
 List<dynamic> _schools = []; // update list to display
 
