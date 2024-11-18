@@ -76,7 +76,7 @@ class SocketService {
   late IO.Socket socket;
   final String serverUrl;
   List<Lobby> _lobbies = [];
-  
+
   final Function(List<Lobby>) onLobbiesUpdate;
   final Function(String)? onError;
   final Function(Lobby)? onJoinSuccess;
@@ -94,7 +94,7 @@ class SocketService {
 
   void initSocket() {
     debugPrint('📡 Connecting to: $serverUrl');
-    
+
     socket = IO.io(serverUrl, {
       'transports': ['websocket'],
       'autoConnect': true,
@@ -214,13 +214,6 @@ class SocketService {
     }
   }
 
-  void getLobbyList(String className, String school) {
-    socket.emit('get_lobbies', {
-      'className': className,
-      'school': school,
-    });
-  }
-
   void dispose() {
     socket.disconnect();
     socket.dispose();
@@ -295,11 +288,15 @@ class _LobbyPageState extends State<LobbyPage> {
   Future<void> _fetchInitialLobbies() async {
     try {
       final response = await http.get(
-        Uri.parse('https://studybuddy.ddns.net/api/lobbies/list?className=${widget.className}&school=${widget.school}'),
+        Uri.parse(
+            'https://studybuddy.ddns.net/api/lobbies/list?className=${widget.className}&school=${widget.school}'),
         headers: {
           'Authorization': 'Bearer ${AuthService.getToken()}',
         },
       );
+
+      debugPrint(
+          'getting lobbies from ${widget.className} and ${widget.school}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -425,6 +422,7 @@ class _LobbyPageState extends State<LobbyPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
@@ -542,11 +540,14 @@ class _LobbyPageState extends State<LobbyPage> {
                                       if (lobby.currentUsers < lobby.maxUsers)
                                         ElevatedButton(
                                           onPressed: () {
-                                            final username = AuthService.getUsername();
+                                            final username =
+                                                AuthService.getUsername();
                                             if (username == null) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
                                                 const SnackBar(
-                                                  content: Text('Please log in first'),
+                                                  content: Text(
+                                                      'Please log in first'),
                                                 ),
                                               );
                                               return;
@@ -557,7 +558,8 @@ class _LobbyPageState extends State<LobbyPage> {
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF6193A9),
+                                            backgroundColor:
+                                                const Color(0xFF6193A9),
                                             foregroundColor: Colors.white,
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 16,
@@ -595,4 +597,3 @@ class _LobbyPageState extends State<LobbyPage> {
     super.dispose();
   }
 }
-                                

@@ -284,7 +284,7 @@ Future<void> deleteCourse(String selectedCourse) async {
                   const SizedBox(height: 30),
 
                   // School Selection Section
-                  Container(
+Container(
   padding: const EdgeInsets.all(16.0),
   decoration: BoxDecoration(
     color: Colors.white,
@@ -308,19 +308,37 @@ Future<void> deleteCourse(String selectedCourse) async {
 
       // Check if the school is confirmed
       isConfirmed
-          ? Text('Selected School: $_selectedSchool',style: TextStyle(
-          fontSize: 18, 
-          color: Color.fromARGB(252, 100, 99, 99),      // Adjust font size
-          fontWeight: FontWeight.bold, // Bold text  // Change the color of the text
-          letterSpacing: 1.2,  // Add spacing between letters
-        ),)
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Selected School: $_selectedSchool',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Color.fromARGB(252, 100, 99, 99),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () {
+                    setState(() {
+                      isConfirmed = false; // Enable school selection again
+                    });
+                  },
+                ),
+              ],
+            )
           : Column(
               children: [
                 // Search Field
                 TextField(
                   controller: _searchController,
                   onChanged: (query) {
-                    fetchSchools(query);  // Trigger search as the user types
+                    fetchSchools(query); // Trigger search as the user types
                   },
                   decoration: const InputDecoration(
                     hintText: 'Enter school name',
@@ -334,22 +352,24 @@ Future<void> deleteCourse(String selectedCourse) async {
                     ? Column(
                         children: [
                           DropdownButton<String>(
-                            value: _selectedSchool.isEmpty ? null : _selectedSchool,
-                            hint: const Text('Select a School'),
+                            value: null, // Initialize with null
+                            hint: Text(_selectedSchool.isEmpty ? 'Select a School' : _selectedSchool),
                             isExpanded: true,
                             items: _schools.map((school) {
-                              final schoolName = '${school['name']} - ${school['city']}, ${school['state']}';
+                              final uniqueValue = '${school['name']} - ${school['city']}, ${school['state']}';
                               return DropdownMenuItem<String>(
-                                value: schoolName,
-                                child: Text(schoolName),
+                                value: uniqueValue,
+                                child: Text(school['name']),
                               );
                             }).toList(),
                             onChanged: (newValue) {
                               setState(() {
-                                _selectedSchool = newValue!;
+                                _selectedSchool = newValue ?? '';
                               });
                             },
                           ),
+
+
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () {
@@ -371,7 +391,9 @@ Future<void> deleteCourse(String selectedCourse) async {
     ],
   ),
 ),
- // <-- End of School Selection Section Container
+
+
+                
 
 const SizedBox(height: 10),
 
