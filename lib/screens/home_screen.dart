@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'session_manager.dart';
 import 'package:baseapp/screens/login_screen.dart';
+import 'lobby_page.dart';
 
 List<dynamic> _schools = []; // update list to display
 
@@ -404,6 +405,13 @@ const SizedBox(height: 10),
                 onTap: (){
                   //here add logic in order to get to chat messaging
                   //insead of a select button I mimplemented a on click.
+
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LobbyPage(className: courses[index], school: _selectedSchool)),
+                  );
+
+
                 }, 
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
