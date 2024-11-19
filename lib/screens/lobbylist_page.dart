@@ -545,24 +545,29 @@ class _LobbyPageState extends State<LobbyPage> {
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 child: InkWell(
-                                  onTap: () {
+                                  onTap: () async {
                                     final username = AuthService.getUsername();
                                     if (username == null) {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Please log in first'),
-                                        ),
+                                        const SnackBar(content: Text('Please log in first')),
                                       );
                                       return;
                                     }
-                                    
-                                    if (lobby.currentUsers < lobby.maxUsers) {
-                                      socketService.joinLobby(
-                                        lobby.lobbyId,
-                                        username,
+
+                                    if (lobby.currentUsers >= lobby.maxUsers) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('This lobby is full')),
                                       );
+                                      return;
+                                    }
+
+                                    try {
+                                      // First, try to join the lobby through socket
+                                      await socketService.joinLobby(lobby.lobbyId, username);
                                       
-                                      // Navigate to LobbyChat
+                                      // If successful, navigate to chat room
+                                      if (!mounted) return;
+                                      
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
@@ -577,12 +582,14 @@ class _LobbyPageState extends State<LobbyPage> {
                                             currentUsers: lobby.currentUsers,
                                           ),
                                         ),
-                                      );
-                                    } else {
+                                      ).then((_) {
+                                        // When returning from chat room, refresh lobby list
+                                        _fetchInitialLobbies();
+                                      });
+                                    } catch (e) {
+                                      if (!mounted) return;
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('This lobby is full'),
-                                        ),
+                                        SnackBar(content: Text('Failed to join lobby: ${e.toString()}')),
                                       );
                                     }
                                   },
@@ -604,40 +611,27 @@ class _LobbyPageState extends State<LobbyPage> {
                                               const SizedBox(height: 4),
                                               Text(
                                                 'Host: ${lobby.host}',
-                                                style: const TextStyle(
-                                                  color: Colors.grey,
-                                                ),
+                                                style: const TextStyle(color: Colors.grey),
                                               ),
                                             ],
                                           ),
                                         ),
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey[200],
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              child: Text(
-                                                '${lobby.currentUsers}/${lobby.maxUsers}',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[200],
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            '${lobby.currentUsers}/${lobby.maxUsers}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey,
                                             ),
-                                            const SizedBox(width: 8),
-                                            Icon(
-                                              Icons.arrow_forward_ios,
-                                              size: 16,
-                                              color: Colors.grey[400],
-                                            ),
-                                          ],
+                                          ),
                                         ),
                                       ],
                                     ),
