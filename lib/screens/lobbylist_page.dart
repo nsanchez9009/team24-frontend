@@ -479,7 +479,12 @@ class _LobbyPageState extends State<LobbyPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextButton.icon(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: (){
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => HomeScreenState()),
+                      );
+                  },
                   icon: const Icon(Icons.arrow_back),
                   label: const Text('Back to Classes'),
                   style: TextButton.styleFrom(
