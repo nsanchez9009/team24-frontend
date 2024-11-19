@@ -255,7 +255,7 @@ Future<void> deleteCourse(String selectedCourse) async {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Logout Button (Inside the scroll view)
+                  SizedBox(height: 40),
                   Align(
                     alignment: Alignment.centerRight,
                     child: ElevatedButton(
@@ -265,7 +265,7 @@ Future<void> deleteCourse(String selectedCourse) async {
                           MaterialPageRoute(builder: (context) => LoginState()),
                         );
                         clearToken();
-                      },
+                    },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFB0C4DE),
                         shape: RoundedRectangleBorder(
@@ -280,6 +280,18 @@ Future<void> deleteCourse(String selectedCourse) async {
                         ),
                       ),
                     ),
+                  ),
+                  Align(
+                    alignment: Alignment.center,
+                     child: Text(
+                                'Home',
+                                style: TextStyle(
+                                  fontFamily: 'Akatab-Bold.ttf',
+                        fontWeight: FontWeight.w900,
+                        fontSize: 30,
+                                ),
+                              
+                              ),
                   ),
                   const SizedBox(height: 30),
 
@@ -323,7 +335,7 @@ Container(
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  icon: const Icon(Icons.edit, color: Color(0xFFB0C4DE)),
                   onPressed: () {
                     setState(() {
                       isConfirmed = false; // Enable school selection again

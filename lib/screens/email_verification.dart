@@ -10,20 +10,30 @@ class EmailVerification extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
+          Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/background.jpg'),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                const SizedBox(height: 100),
                 const Text(
-                  'STUDY BUDDY',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    'STUDY BUDDY',
+                    style: TextStyle(
+                      fontFamily: 'Akatab-Bold.ttf',
+                      fontWeight: FontWeight.w900,
+                      fontSize: 48,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 100),
                 const Text(
                   'Verify your email.',
                   style: TextStyle(
@@ -33,66 +43,56 @@ class EmailVerification extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Check your email for verification link!',
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: 225, // Set a fixed width for the buttons
-                  child: ElevatedButton(
-                    onPressed: () {
-                      
-                      // code that goes to login page, delete above scaffold messenger
-                      
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => LoginState()),
-                      ); 
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF6193A9),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 50, vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'Back to Login',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontFamily: 'Karla',
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Logic to ask backend to send another email
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('New link sent, check your email!')),
-                    );
-                  },
-                  child: Container(
-                    child: const Text(
-                      "Didn't get a link? Resend",
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 20,
-                        fontFamily: 'Kameron',
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
+                Container(
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(20), // Rounded edges
+    color: Colors.white,
+  ),
+  padding: const EdgeInsets.all(20), // Padding inside the container
+  child: Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      const Text(
+        'Check your email for verification link!',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+        ),
+        textAlign: TextAlign.center, // Center the text
+      ),
+      const SizedBox(height: 20),
+      SizedBox(
+        width: 225, // Set a fixed width for the buttons
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => LoginState()),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6193A9),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 50, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: const Text(
+            'Back to Login',
+            style: TextStyle(
+              fontSize: 18,
+              fontFamily: 'Karla',
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+)
+,
               ],
             ),
           ),

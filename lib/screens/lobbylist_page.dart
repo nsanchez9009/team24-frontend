@@ -442,216 +442,208 @@ class _LobbyPageState extends State<LobbyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'STUDY BUDDY',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.home, size: 30),
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => HomeScreenState()),
-              );
-            },
-          )
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextButton.icon(
-                  onPressed: (){
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => HomeScreenState()),
-                      );
-                  },
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Back to Classes'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.grey,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Available Lobbies for ${widget.className}',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _showCreateLobbyDialog,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6193A9),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Create Lobby',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      error!,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                if (isLoading)
-                  const Center(child: CircularProgressIndicator())
-                else
-                  Expanded(
-                    child: lobbies.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No lobbies available',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 16,
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: lobbies.length,
-                            itemBuilder: (context, index) {
-                              final lobby = lobbies[index];
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                child: InkWell(
-                                  onTap: () async {
-                                    final username = AuthService.getUsername();
-                                    if (username == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Please log in first')),
-                                      );
-                                      return;
-                                    }
 
-                                    if (lobby.currentUsers >= lobby.maxUsers) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('This lobby is full')),
-                                      );
-                                      return;
-                                    }
-
-                                    try {
-                                      // First, try to join the lobby through socket
-                                      await socketService.joinLobby(lobby.lobbyId, username);
-                                      
-                                      // If successful, navigate to chat room
-                                      if (!mounted) return;
-                                      
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => LobbyChat(
-                                            lobbyId: lobby.lobbyId,
-                                            lobbyName: lobby.name,
-                                            className: widget.className,
-                                            school: widget.school,
-                                            username: username,
-                                            isHost: lobby.host == username,
-                                            maxUsers: lobby.maxUsers,
-                                            currentUsers: lobby.currentUsers,
-                                          ),
-                                        ),
-                                      ).then((_) {
-                                        // When returning from chat room, refresh lobby list
-                                        _fetchInitialLobbies();
-                                      });
-                                    } catch (e) {
-                                      if (!mounted) return;
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Failed to join lobby: ${e.toString()}')),
-                                      );
-                                    }
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                lobby.name,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                'Host: ${lobby.host}',
-                                                style: const TextStyle(color: Colors.grey),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[200],
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            '${lobby.currentUsers}/${lobby.maxUsers}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-              ],
+    body: Stack(
+      children: [
+        // Background Image
+        Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/background.jpg'), // Path to your image
+              fit: BoxFit.cover,
             ),
           ),
         ),
-      ),
-    );
+        // Foreground Content
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Card(
+            color: Colors.white,
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => HomeScreenState()),
+                      );
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Back to Classes'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.grey,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Available Lobbies for ${widget.className}',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _showCreateLobbyDialog,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6193A9),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Create Lobby',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  if (error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text(
+                        error!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  if (isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    Expanded(
+                      child: lobbies.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No lobbies available',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: lobbies.length,
+                              itemBuilder: (context, index) {
+                                final lobby = lobbies[index];
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final username = AuthService.getUsername();
+                                      if (username == null) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Please log in first')),
+                                        );
+                                        return;
+                                      }
+
+                                      if (lobby.currentUsers >= lobby.maxUsers) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('This lobby is full')),
+                                        );
+                                        return;
+                                      }
+
+                                      try {
+                                        // First, try to join the lobby through socket
+                                        await socketService.joinLobby(lobby.lobbyId, username);
+                                        
+                                        // If successful, navigate to chat room
+                                        if (!mounted) return;
+                                        
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => LobbyChat(
+                                              lobbyId: lobby.lobbyId,
+                                              lobbyName: lobby.name,
+                                              className: widget.className,
+                                              school: widget.school,
+                                              username: username,
+                                              isHost: lobby.host == username,
+                                              maxUsers: lobby.maxUsers,
+                                              currentUsers: lobby.currentUsers,
+                                            ),
+                                          ),
+                                        ).then((_) {
+                                          // When returning from chat room, refresh lobby list
+                                          _fetchInitialLobbies();
+                                        });
+                                      } catch (e) {
+                                        if (!mounted) return;
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Failed to join lobby: ${e.toString()}')),
+                                        );
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  lobby.name,
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'Host: ${lobby.host}',
+                                                  style: const TextStyle(color: Colors.grey),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[200],
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              '${lobby.currentUsers}/${lobby.maxUsers}',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
   }
 
   @override

@@ -210,7 +210,6 @@ class SignupScreen extends State<SignupScreenState> {
                                 child: TextFormField(
                                   controller: _emailController,
                                   validator: validateEmail,
-                                  obscureText: true,
                                   decoration: InputDecoration(
                                       prefixIcon: Icon(Icons.email),
                                       labelText: 'email',
