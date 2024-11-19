@@ -66,6 +66,7 @@ class _LobbyChatState extends State<LobbyChat> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String? error;
+  bool isConnected = false;
 
   @override
   void initState() {
@@ -74,7 +75,7 @@ class _LobbyChatState extends State<LobbyChat> {
   }
 
   void _initializeSocket() {
-    final token = AuthService.getToken(); // Use your existing AuthService
+    final token = AuthService.getToken();
     
     if (token == null) {
       setState(() {
@@ -83,17 +84,29 @@ class _LobbyChatState extends State<LobbyChat> {
       return;
     }
 
+    // Force a new connection
     socket = IO.io(
       'https://studybuddy.ddns.net',
       IO.OptionBuilder()
         .setTransports(['websocket'])
         .setExtraHeaders({'Authorization': 'Bearer $token'})
+        .enableForceNew() // Force a new connection
         .enableAutoConnect()
         .build()
     );
 
+    _setupSocketListeners();
+  }
+
+  void _setupSocketListeners() {
     socket.onConnect((_) {
       print('Connected to chat');
+      setState(() {
+        isConnected = true;
+        error = null;
+      });
+      
+      // Rejoin the lobby after connection
       socket.emit('joinLobby', {
         'lobbyId': widget.lobbyId,
         'username': widget.username,
@@ -101,9 +114,11 @@ class _LobbyChatState extends State<LobbyChat> {
     });
 
     socket.on('userList', (users) {
-      setState(() {
-        activeUsers = List<String>.from(users);
-      });
+      if (mounted) {
+        setState(() {
+          activeUsers = List<String>.from(users);
+        });
+      }
     });
 
     socket.on('receiveMessage', (data) {
@@ -120,7 +135,6 @@ class _LobbyChatState extends State<LobbyChat> {
             messages.add(newMessage);
           });
           
-          // Scroll to bottom after message is added
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _scrollToBottom();
           });
@@ -148,7 +162,6 @@ class _LobbyChatState extends State<LobbyChat> {
             messages = initialMessages;
           });
 
-          // Scroll to bottom after initial messages are loaded
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _scrollToBottom();
           });
@@ -159,28 +172,37 @@ class _LobbyChatState extends State<LobbyChat> {
     });
 
     socket.on('lobbyClosed', (_) {
-      setState(() {
-        error = 'The lobby was closed by the host.';
-      });
-      Navigator.of(context).pushReplacementNamed('/course-home');
+      if (mounted) {
+        setState(() {
+          error = 'The lobby was closed by the host.';
+        });
+        Navigator.of(context).pushReplacementNamed('/course-home');
+      }
     });
 
-    socket.on('connect_error', (err) => print('Connect error: $err'));
-    socket.on('connect_timeout', (_) => print('Connect timeout'));
-    socket.on('error', (err) {
-      print('Socket error: $err');
-      setState(() {
-        error = err.toString();
-      });
+    socket.onDisconnect((_) {
+      print('Disconnected from chat');
+      if (mounted) {
+        setState(() {
+          isConnected = false;
+        });
+      }
     });
-    
-    socket.onDisconnect((_) => print('Disconnected from chat'));
+
+    socket.on('connect_error', (err) {
+      print('Connect error: $err');
+      if (mounted) {
+        setState(() {
+          error = 'Connection error: $err';
+        });
+      }
+    });
   }
 
   void _sendMessage() {
-    if (_messageController.text.trim().isNotEmpty) {
+    if (_messageController.text.trim().isNotEmpty && isConnected) {
       final messageText = _messageController.text.trim();
-      print('Sending message: $messageText'); // Debug log
+      print('Sending message: $messageText');
       
       final message = {
         'lobbyId': widget.lobbyId,
@@ -190,6 +212,13 @@ class _LobbyChatState extends State<LobbyChat> {
       
       socket.emit('sendMessage', message);
       _messageController.clear();
+      
+      
+      
+      // Scroll to bottom after sending
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
     }
   }
 
@@ -204,15 +233,30 @@ class _LobbyChatState extends State<LobbyChat> {
   }
 
   void _leaveLobby() {
-    socket.emit('leaveLobby', {
-      'lobbyId': widget.lobbyId,
-      'username': widget.username,
-    });
+    if (isConnected) {
+      socket.emit('leaveLobby', {
+        'lobbyId': widget.lobbyId,
+        'username': widget.username,
+      });
+    }
+    
+    // Clean up socket connection
+    socket.disconnect();
+    socket.dispose();
+    
+    // Navigate back
     Navigator.of(context).pushReplacementNamed('/course-home');
   }
 
   @override
   void dispose() {
+    // Ensure proper cleanup
+    if (socket.connected) {
+      socket.emit('leaveLobby', {
+        'lobbyId': widget.lobbyId,
+        'username': widget.username,
+      });
+    }
     socket.disconnect();
     socket.dispose();
     _messageController.dispose();
@@ -363,7 +407,7 @@ class _LobbyChatState extends State<LobbyChat> {
               ),
               const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: _sendMessage,
+                onPressed: isConnected ? _sendMessage : null, // Disable when not connected
                 child: const Text('Send'),
               ),
             ],
